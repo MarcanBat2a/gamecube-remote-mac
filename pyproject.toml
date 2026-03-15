@@ -13,10 +13,7 @@ dependencies = [
     "customtkinter>=5.2.0",
     "Pillow>=9.0.0",
     "pystray>=0.19.0",
-    "vgamepad>=0.0.8; sys_platform == 'win32'",
-    "evdev>=1.7.0; sys_platform == 'linux'",
-    "bleak>=0.21.0; sys_platform == 'darwin'",
-    "bleak>=0.21.0; sys_platform == 'win32'",
+    "bleak>=0.21.0",
     "pyobjc-framework-Cocoa>=9.0; sys_platform == 'darwin'",
 ]
 
@@ -28,3 +25,9 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 gc_controller = ["assets/controller/*.png", "fonts/*.ttf"]
+
+[tool.uv]
+# Restrict the lockfile to macOS only.
+environments = [
+    "sys_platform == 'darwin'",
+]

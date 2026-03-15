@@ -12,6 +12,7 @@ from typing import Optional
 import customtkinter
 
 from . import ui_theme as T
+from .i18n import _ as _t
 
 
 class BLEDevicePickerDialog:
@@ -31,7 +32,7 @@ class BLEDevicePickerDialog:
         self._result: Optional[str] = None
 
         self._dlg = customtkinter.CTkToplevel(parent)
-        self._dlg.title("Select BLE Controller")
+        self._dlg.title(_t("Select BLE Controller"))
         self._dlg.resizable(False, False)
         self._dlg.transient(parent)
         self._dlg.grab_set()
@@ -41,49 +42,61 @@ class BLEDevicePickerDialog:
         frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
 
         customtkinter.CTkLabel(
-            frame, text="Select a controller to connect:",
-            text_color=T.TEXT_PRIMARY, font=("", 14),
+            frame,
+            text=_t("Select a controller to connect:"),
+            text_color=T.TEXT_PRIMARY,
+            font=("", 14),
         ).pack(anchor=tk.W, pady=(0, 8))
 
         # Style the Treeview for dark theme
         style = ttk.Style()
-        style.theme_use('default')
-        style.configure('BLE.Treeview',
-                        background=T.SURFACE_DARK,
-                        foreground=T.TEXT_PRIMARY,
-                        fieldbackground=T.SURFACE_DARK,
-                        borderwidth=0,
-                        font=("", 11))
-        style.configure('BLE.Treeview.Heading',
-                        background=T.GC_PURPLE_MID,
-                        foreground=T.TEXT_PRIMARY,
-                        borderwidth=0,
-                        font=("", 11, "bold"))
-        style.map('BLE.Treeview',
-                  background=[('selected', T.GC_PURPLE_LIGHT)],
-                  foreground=[('selected', T.TEXT_PRIMARY)])
+        style.theme_use("default")
+        style.configure(
+            "BLE.Treeview",
+            background=T.SURFACE_DARK,
+            foreground=T.TEXT_PRIMARY,
+            fieldbackground=T.SURFACE_DARK,
+            borderwidth=0,
+            font=("", 11),
+        )
+        style.configure(
+            "BLE.Treeview.Heading",
+            background=T.GC_PURPLE_MID,
+            foreground=T.TEXT_PRIMARY,
+            borderwidth=0,
+            font=("", 11, "bold"),
+        )
+        style.map(
+            "BLE.Treeview",
+            background=[("selected", T.GC_PURPLE_LIGHT)],
+            foreground=[("selected", T.TEXT_PRIMARY)],
+        )
 
         # Treeview
         cols = ("name", "address", "signal")
-        self._tree = ttk.Treeview(frame, columns=cols, show="headings",
-                                  height=min(len(devices), 12),
-                                  style='BLE.Treeview')
-        self._tree.heading("name", text="Name")
-        self._tree.heading("address", text="Address")
-        self._tree.heading("signal", text="Signal")
+        self._tree = ttk.Treeview(
+            frame,
+            columns=cols,
+            show="headings",
+            height=min(len(devices), 12),
+            style="BLE.Treeview",
+        )
+        self._tree.heading("name", text=_t("Name"))
+        self._tree.heading("address", text=_t("Address"))
+        self._tree.heading("signal", text=_t("Signal"))
         self._tree.column("name", width=180)
         self._tree.column("address", width=160)
         self._tree.column("signal", width=60, anchor=tk.CENTER)
 
         # Sort by RSSI descending (strongest first)
-        sorted_devices = sorted(devices, key=lambda d: d.get('rssi', -999),
-                                reverse=True)
+        sorted_devices = sorted(
+            devices, key=lambda d: d.get("rssi", -999), reverse=True
+        )
         for dev in sorted_devices:
-            rssi = dev.get('rssi', -999)
+            rssi = dev.get("rssi", -999)
             signal = f"{rssi} dBm" if rssi > -999 else "?"
-            name = dev.get('name', '') or '(unknown)'
-            self._tree.insert("", tk.END, values=(
-                name, dev['address'], signal))
+            name = dev.get("name", "") or _t("(unknown)")
+            self._tree.insert("", tk.END, values=(name, dev["address"], signal))
 
         self._tree.pack(fill=tk.BOTH, expand=True)
         self._tree.bind("<Double-1>", lambda _: self._on_connect())
@@ -93,21 +106,25 @@ class BLEDevicePickerDialog:
         btn_frame.pack(fill=tk.X, pady=(12, 0))
 
         customtkinter.CTkButton(
-            btn_frame, text="Cancel",
+            btn_frame,
+            text=_t("Cancel"),
             command=self._on_cancel,
             fg_color=T.GC_PURPLE_SURFACE,
             hover_color=T.GC_PURPLE_LIGHT,
             text_color=T.TEXT_PRIMARY,
-            corner_radius=12, width=100,
+            corner_radius=12,
+            width=100,
         ).pack(side=tk.RIGHT)
 
         self._connect_btn = customtkinter.CTkButton(
-            btn_frame, text="Connect",
+            btn_frame,
+            text=_t("Connect"),
             command=self._on_connect,
             fg_color=T.GC_PURPLE_MID,
             hover_color=T.GC_PURPLE_LIGHT,
             text_color=T.TEXT_PRIMARY,
-            corner_radius=12, width=100,
+            corner_radius=12,
+            width=100,
         )
         self._connect_btn.pack(side=tk.RIGHT, padx=(0, 8))
 

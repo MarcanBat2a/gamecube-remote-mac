@@ -6,7 +6,6 @@ Uses customtkinter for modern rounded widgets and a GameCube purple theme.
 Supports up to 4 controller tabs via CTkTabview.
 """
 
-import sys
 import tkinter as tk
 from typing import Dict, Callable, List, Optional
 
@@ -16,8 +15,7 @@ from .controller_constants import MAX_SLOTS
 from .calibration import CalibrationManager
 from . import ui_theme as T
 from .ui_controller_canvas import GCControllerVisual
-
-IS_MACOS = sys.platform == "darwin"
+from .i18n import _ as _t
 
 
 class SlotUI:
@@ -36,7 +34,6 @@ class SlotUI:
         # Controller visual (replaces separate stick/trigger/button widgets)
         self.controller_visual: Optional[GCControllerVisual] = None
 
-
         # Calibration
         self.cal_wizard_btn = None
 
@@ -44,19 +41,22 @@ class SlotUI:
 class ControllerUI:
     """Creates and manages all UI widgets for the controller application."""
 
-    def __init__(self, root,
-                 slot_calibrations: List[dict],
-                 slot_cal_mgrs: List[CalibrationManager],
-                 on_connect: Callable[[int], None],
-                 on_cal_wizard: Callable[[int], None],
-                 on_save: Callable,
-                 on_pair: Optional[Callable[[int], None]] = None,
-                 on_emulate_all: Optional[Callable] = None,
-                 on_test_rumble_all: Optional[Callable] = None,
-                 ble_available: bool = False,
-                 get_known_ble_devices: Optional[Callable] = None,
-                 on_forget_ble_device: Optional[Callable] = None,
-                 on_auto_save: Optional[Callable] = None):
+    def __init__(
+        self,
+        root,
+        slot_calibrations: List[dict],
+        slot_cal_mgrs: List[CalibrationManager],
+        on_connect: Callable[[int], None],
+        on_cal_wizard: Callable[[int], None],
+        on_save: Callable,
+        on_pair: Optional[Callable[[int], None]] = None,
+        on_emulate_all: Optional[Callable] = None,
+        on_test_rumble_all: Optional[Callable] = None,
+        ble_available: bool = False,
+        get_known_ble_devices: Optional[Callable] = None,
+        on_forget_ble_device: Optional[Callable] = None,
+        on_auto_save: Optional[Callable] = None,
+    ):
         self._root = root
         self._slot_calibrations = slot_calibrations
         self._slot_cal_mgrs = slot_cal_mgrs
@@ -66,15 +66,23 @@ class ControllerUI:
         self._trigger_bar_height = 20
 
         # Global UI variables
-        self.auto_connect_var = tk.BooleanVar(value=slot_calibrations[0]['auto_connect'])
+        self.auto_connect_var = tk.BooleanVar(
+            value=slot_calibrations[0]["auto_connect"]
+        )
 
-        emu_default = slot_calibrations[0]['emulation_mode']
-        if IS_MACOS and emu_default == 'xbox360':
-            emu_default = 'dolphin_pipe'
+        emu_default = slot_calibrations[0]["emulation_mode"]
+        if emu_default == "xbox360":
+            emu_default = "dolphin_pipe"
         self.emu_mode_var = tk.StringVar(value=emu_default)
-        self.trigger_mode_var = tk.BooleanVar(value=slot_calibrations[0]['trigger_bump_100_percent'])
-        self.minimize_to_tray_var = tk.BooleanVar(value=slot_calibrations[0].get('minimize_to_tray', False))
-        self.auto_scan_ble_var = tk.BooleanVar(value=slot_calibrations[0].get('auto_scan_ble', True))
+        self.trigger_mode_var = tk.BooleanVar(
+            value=slot_calibrations[0]["trigger_bump_100_percent"]
+        )
+        self.minimize_to_tray_var = tk.BooleanVar(
+            value=slot_calibrations[0].get("minimize_to_tray", False)
+        )
+        self.auto_scan_ble_var = tk.BooleanVar(
+            value=slot_calibrations[0].get("auto_scan_ble", True)
+        )
 
         # Callbacks for settings dialog
         self._on_emulate_all = on_emulate_all
@@ -146,41 +154,44 @@ class ControllerUI:
         icon_frame.place(relx=1.0, y=0, anchor="ne")
 
         customtkinter.CTkButton(
-            icon_frame, text="\u2699",
+            icon_frame,
+            text="\u2699",
             command=self.open_settings,
-            width=40, height=40, font=("", 24),
+            width=40,
+            height=40,
+            font=("", 24),
             **icon_base,
         ).pack(side=tk.LEFT)
 
         for i in range(MAX_SLOTS):
-            tab_name = f"Controller {i + 1}"
+            tab_name = _t("Controller {}").format(i + 1)
             self.tabview.add(tab_name)
             self._tab_names.append(tab_name)
 
             slot_ui = SlotUI()
-            self._build_tab(i, slot_ui, on_connect,
-                            on_cal_wizard, on_pair)
+            self._build_tab(i, slot_ui, on_connect, on_cal_wizard, on_pair)
             self.slots.append(slot_ui)
 
         # Track global setting changes — auto-save when changed
         def _on_setting_changed(*_):
             if not self._initializing and self._on_auto_save:
                 self._on_auto_save()
+
         def _on_auto_connect_changed(*_):
             if not self._initializing:
                 for i in range(len(self.slots)):
                     self._update_connect_btn_visibility(i)
 
-        self.auto_connect_var.trace_add('write', _on_setting_changed)
-        self.auto_connect_var.trace_add('write', _on_auto_connect_changed)
-        self.emu_mode_var.trace_add('write', _on_setting_changed)
-        self.trigger_mode_var.trace_add('write', _on_setting_changed)
-        self.minimize_to_tray_var.trace_add('write', _on_setting_changed)
-        self.auto_scan_ble_var.trace_add('write', _on_setting_changed)
+        self.auto_connect_var.trace_add("write", _on_setting_changed)
+        self.auto_connect_var.trace_add("write", _on_auto_connect_changed)
+        self.emu_mode_var.trace_add("write", _on_setting_changed)
+        self.trigger_mode_var.trace_add("write", _on_setting_changed)
+        self.minimize_to_tray_var.trace_add("write", _on_setting_changed)
+        self.auto_scan_ble_var.trace_add("write", _on_setting_changed)
 
-    def _build_tab(self, index: int, slot_ui: SlotUI,
-                   on_connect, on_cal_wizard,
-                   on_pair=None):
+    def _build_tab(
+        self, index: int, slot_ui: SlotUI, on_connect, on_cal_wizard, on_pair=None
+    ):
         """Build one controller tab."""
         tab_name = self._tab_names[index]
         tab = self.tabview.tab(tab_name)
@@ -196,38 +207,41 @@ class ControllerUI:
         slot_ui.controller_visual.pack(padx=8, pady=(8, 0))
 
         slot_ui.status_label = customtkinter.CTkLabel(
-            visual_frame, text="Ready to Connect",
-            text_color="#FFFFFF", font=(T.FONT_FAMILY, 14),
+            visual_frame,
+            text=_t("Ready to Connect"),
+            text_color="#FFFFFF",
+            font=(T.FONT_FAMILY, 14),
             anchor="center",
         )
         slot_ui.status_label.pack(fill=tk.X, padx=10, pady=(2, 8))
 
         # Draw saved octagons
-        for side in ('left', 'right'):
-            cal_key = f'stick_{side}_octagon'
+        for side in ("left", "right"):
+            cal_key = f"stick_{side}_octagon"
             octagon_data = cal.get(cal_key)
             slot_ui.controller_visual.draw_octagon(side, octagon_data)
 
         # Draw trigger bump markers
-        for side in ('left', 'right'):
-            bump_val = cal.get(f'trigger_{side}_bump', 190.0)
+        for side in ("left", "right"):
+            bump_val = cal.get(f"trigger_{side}_bump", 190.0)
             slot_ui.controller_visual.draw_trigger_bump_line(side, bump_val)
 
         # ── Bottom button row ──
         btn_frame = customtkinter.CTkFrame(tab, fg_color="transparent")
-        btn_frame.grid(row=1, column=0, columnspan=2, sticky="ew",
-                        padx=5, pady=(0, 5))
+        btn_frame.grid(row=1, column=0, columnspan=2, sticky="ew", padx=5, pady=(0, 5))
 
         btn_kwargs = dict(
             fg_color=T.BTN_FG,
             hover_color=T.BTN_HOVER,
             text_color=T.BTN_TEXT,
-            corner_radius=12, height=32,
+            corner_radius=12,
+            height=32,
             font=(T.FONT_FAMILY, 14),
         )
 
         slot_ui.connect_btn = customtkinter.CTkButton(
-            btn_frame, text="Connect USB",
+            btn_frame,
+            text=_t("Connect USB"),
             command=lambda i=index: on_connect(i),
             **btn_kwargs,
         )
@@ -236,14 +250,16 @@ class ControllerUI:
 
         if self._ble_available and on_pair:
             slot_ui.pair_btn = customtkinter.CTkButton(
-                btn_frame, text="Pair New Wireless Controller",
+                btn_frame,
+                text=_t("Pair New Wireless Controller"),
                 command=lambda i=index: on_pair(i),
                 **btn_kwargs,
             )
             slot_ui.pair_btn.pack(side=tk.LEFT, padx=4, expand=True, fill=tk.X)
 
         slot_ui.cal_wizard_btn = customtkinter.CTkButton(
-            btn_frame, text="Calibration Wizard",
+            btn_frame,
+            text=_t("Calibration Wizard"),
             command=lambda i=index: on_cal_wizard(i),
             **btn_kwargs,
         )
@@ -257,6 +273,7 @@ class ControllerUI:
     def open_settings(self):
         """Open the global settings dialog."""
         from .ui_settings_dialog import SettingsDialog
+
         self._settings_dialog = SettingsDialog(
             self._root,
             emu_mode_var=self.emu_mode_var,
@@ -264,8 +281,12 @@ class ControllerUI:
             auto_connect_var=self.auto_connect_var,
             minimize_to_tray_var=self.minimize_to_tray_var,
             auto_scan_ble_var=self.auto_scan_ble_var,
-            on_emulate_all=self._on_emulate_all if self._on_emulate_all else lambda: None,
-            on_test_rumble_all=self._on_test_rumble_all if self._on_test_rumble_all else lambda: None,
+            on_emulate_all=self._on_emulate_all
+            if self._on_emulate_all
+            else lambda: None,
+            on_test_rumble_all=self._on_test_rumble_all
+            if self._on_test_rumble_all
+            else lambda: None,
             is_any_emulating=lambda: any(self._slot_emulating),
             is_any_connected=lambda: any(self._slot_connected),
             on_save=self._on_save,
@@ -275,8 +296,9 @@ class ControllerUI:
 
     # ── UI update methods ────────────────────────────────────────────
 
-    def update_stick_position(self, slot_index: int, side: str,
-                              x_norm: float, y_norm: float):
+    def update_stick_position(
+        self, slot_index: int, side: str, x_norm: float, y_norm: float
+    ):
         """Update analog stick position on the controller visual.
 
         Args:
@@ -292,8 +314,12 @@ class ControllerUI:
         """Update trigger fills and labels for a specific slot."""
         s = self.slots[slot_index]
         cal_mgr = self._slot_cal_mgrs[slot_index]
-        s.controller_visual.update_trigger_fill('left', cal_mgr.calibrate_trigger_fast(left_trigger, 'left'))
-        s.controller_visual.update_trigger_fill('right', cal_mgr.calibrate_trigger_fast(right_trigger, 'right'))
+        s.controller_visual.update_trigger_fill(
+            "left", cal_mgr.calibrate_trigger_fast(left_trigger, "left")
+        )
+        s.controller_visual.update_trigger_fill(
+            "right", cal_mgr.calibrate_trigger_fast(right_trigger, "right")
+        )
 
     def update_button_display(self, slot_index: int, button_states: Dict[str, bool]):
         """Update button indicators for a specific slot."""
@@ -304,9 +330,9 @@ class ControllerUI:
         """Redraw trigger bump marker lines from calibration data."""
         s = self.slots[slot_index]
         cal_mgr = self._slot_cal_mgrs[slot_index]
-        for side in ('left', 'right'):
+        for side in ("left", "right"):
             cal = self._slot_calibrations[slot_index]
-            bump_raw = cal.get(f'trigger_{side}_bump', 190.0)
+            bump_raw = cal.get(f"trigger_{side}_bump", 190.0)
             bump_calibrated = cal_mgr.calibrate_trigger_fast(int(bump_raw), side)
             s.controller_visual.draw_trigger_bump_line(side, bump_calibrated)
 
@@ -330,8 +356,8 @@ class ControllerUI:
         """Redraw both octagon polygons from calibration data for a slot."""
         s = self.slots[slot_index]
         cal = self._slot_calibrations[slot_index]
-        for side in ('left', 'right'):
-            cal_key = f'stick_{side}_octagon'
+        for side in ("left", "right"):
+            cal_key = f"stick_{side}_octagon"
             octagon_data = cal.get(cal_key)
             s.controller_visual.draw_octagon(side, octagon_data)
 
@@ -355,13 +381,19 @@ class ControllerUI:
         if self.auto_connect_var.get():
             s.connect_btn.pack_forget()
         elif not s.connect_btn.winfo_ismapped():
-            before = s.pair_btn if s.pair_btn and s.pair_btn.winfo_ismapped() else s.cal_wizard_btn
-            s.connect_btn.pack(side=tk.LEFT, padx=(0, 4), expand=True, fill=tk.X, before=before)
+            before = (
+                s.pair_btn
+                if s.pair_btn and s.pair_btn.winfo_ismapped()
+                else s.cal_wizard_btn
+            )
+            s.connect_btn.pack(
+                side=tk.LEFT, padx=(0, 4), expand=True, fill=tk.X, before=before
+            )
 
     def _refresh_tab_title(self, slot_index: int):
         """Rebuild tab title from connection state."""
         prefix = "\u2713 " if self._slot_connected[slot_index] else ""
-        base = f"Controller {slot_index + 1}"
+        base = _t("Controller {}").format(slot_index + 1)
         new_name = prefix + base
         old_name = self._tab_names[slot_index]
 
@@ -370,7 +402,7 @@ class ControllerUI:
                 self.tabview.rename(old_name, new_name)
                 self._tab_names[slot_index] = new_name
                 # Fix CTkTabview bug: rename() doesn't update _current_name
-                if getattr(self.tabview, '_current_name', None) == old_name:
+                if getattr(self.tabview, "_current_name", None) == old_name:
                     self.tabview._current_name = new_name
             except Exception:
                 pass
@@ -398,7 +430,9 @@ class ControllerUI:
         if not self._ble_scan_anim_active:
             return
 
-        led_index = self._BLE_SCAN_LED_SEQ[self._ble_scan_anim_step % len(self._BLE_SCAN_LED_SEQ)]
+        led_index = self._BLE_SCAN_LED_SEQ[
+            self._ble_scan_anim_step % len(self._BLE_SCAN_LED_SEQ)
+        ]
 
         # Only animate the first non-connected slot
         for i in range(MAX_SLOTS):
@@ -418,8 +452,8 @@ class ControllerUI:
 
         # Redraw saved octagons
         cal = self._slot_calibrations[slot_index]
-        for side in ('left', 'right'):
-            cal_key = f'stick_{side}_octagon'
+        for side in ("left", "right"):
+            cal_key = f"stick_{side}_octagon"
             octagon_data = cal.get(cal_key)
             s.controller_visual.draw_octagon(side, octagon_data)
 

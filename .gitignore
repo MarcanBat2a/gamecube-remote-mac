@@ -419,3 +419,13 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# AI agent / assistant files
+.claude/
+.copilot/
+.cursor/
+.ai/
+AGENTS.md
+.instructions.md
+.prompt.md
+copilot-instructions.md

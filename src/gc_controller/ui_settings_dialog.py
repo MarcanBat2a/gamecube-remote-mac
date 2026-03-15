@@ -5,7 +5,6 @@ Modal dialog for global settings: emulation mode, trigger mode,
 auto-connect, start/stop emulation, and test rumble.
 """
 
-import sys
 import tkinter as tk
 import webbrowser
 from typing import Callable, Optional
@@ -13,8 +12,7 @@ from typing import Callable, Optional
 import customtkinter
 
 from . import ui_theme as T
-
-IS_MACOS = sys.platform == "darwin"
+from .i18n import _ as _t, get_language, set_language, SUPPORTED_LANGUAGES
 
 
 class SettingsDialog:
@@ -28,19 +26,22 @@ class SettingsDialog:
     - Test Rumble (all emulating controllers)
     """
 
-    def __init__(self, parent,
-                 emu_mode_var: tk.StringVar,
-                 trigger_mode_var: tk.BooleanVar,
-                 auto_connect_var: tk.BooleanVar,
-                 minimize_to_tray_var: tk.BooleanVar,
-                 auto_scan_ble_var: tk.BooleanVar = None,
-                 on_emulate_all: Callable = lambda: None,
-                 on_test_rumble_all: Callable = lambda: None,
-                 is_any_emulating: Callable[[], bool] = lambda: False,
-                 is_any_connected: Callable[[], bool] = lambda: False,
-                 on_save: Optional[Callable] = None,
-                 get_known_ble_devices: Optional[Callable] = None,
-                 on_forget_ble_device: Optional[Callable] = None):
+    def __init__(
+        self,
+        parent,
+        emu_mode_var: tk.StringVar,
+        trigger_mode_var: tk.BooleanVar,
+        auto_connect_var: tk.BooleanVar,
+        minimize_to_tray_var: tk.BooleanVar,
+        auto_scan_ble_var: tk.BooleanVar = None,
+        on_emulate_all: Callable = lambda: None,
+        on_test_rumble_all: Callable = lambda: None,
+        is_any_emulating: Callable[[], bool] = lambda: False,
+        is_any_connected: Callable[[], bool] = lambda: False,
+        on_save: Optional[Callable] = None,
+        get_known_ble_devices: Optional[Callable] = None,
+        on_forget_ble_device: Optional[Callable] = None,
+    ):
         self._parent = parent
         self._emu_mode_var = emu_mode_var
         self._trigger_mode_var = trigger_mode_var
@@ -56,7 +57,7 @@ class SettingsDialog:
         self._on_forget_ble_device = on_forget_ble_device
 
         self._dlg = customtkinter.CTkToplevel(parent)
-        self._dlg.title("Settings")
+        self._dlg.title(_t("Settings"))
         self._dlg.resizable(False, False)
         self._dlg.transient(parent)
         self._dlg.configure(fg_color=T.GC_PURPLE_DARK)
@@ -95,50 +96,66 @@ class SettingsDialog:
 
         # ── Emulation Mode ──
         customtkinter.CTkLabel(
-            left, text="Emulation Mode",
-            text_color=T.TEXT_PRIMARY, font=(T.FONT_FAMILY, 16, "bold"),
+            left,
+            text=_t("Emulation Mode"),
+            text_color=T.TEXT_PRIMARY,
+            font=(T.FONT_FAMILY, 16, "bold"),
         ).pack(anchor=tk.W, pady=(0, 4))
 
-        xbox_state = 'disabled' if IS_MACOS else 'normal'
+        xbox_state = "disabled"
         customtkinter.CTkRadioButton(
-            left, text="Xbox 360",
-            variable=self._emu_mode_var, value='xbox360',
-            state=xbox_state, **radio_kwargs,
-        ).pack(anchor=tk.W, padx=16, pady=1)
-
-        customtkinter.CTkRadioButton(
-            left, text="Dolphin Pipe",
-            variable=self._emu_mode_var, value='dolphin_pipe',
+            left,
+            text=_t("Xbox 360"),
+            variable=self._emu_mode_var,
+            value="xbox360",
+            state=xbox_state,
             **radio_kwargs,
         ).pack(anchor=tk.W, padx=16, pady=1)
 
         customtkinter.CTkRadioButton(
-            left, text="DSU Server",
-            variable=self._emu_mode_var, value='dsu',
+            left,
+            text=_t("Dolphin Pipe"),
+            variable=self._emu_mode_var,
+            value="dolphin_pipe",
+            **radio_kwargs,
+        ).pack(anchor=tk.W, padx=16, pady=1)
+
+        customtkinter.CTkRadioButton(
+            left,
+            text=_t("DSU Server"),
+            variable=self._emu_mode_var,
+            value="dsu",
             **radio_kwargs,
         ).pack(anchor=tk.W, padx=16, pady=1)
 
         # ── Trigger Mode ──
         customtkinter.CTkLabel(
-            left, text="Trigger Mode",
-            text_color=T.TEXT_PRIMARY, font=(T.FONT_FAMILY, 16, "bold"),
+            left,
+            text=_t("Trigger Mode"),
+            text_color=T.TEXT_PRIMARY,
+            font=(T.FONT_FAMILY, 16, "bold"),
         ).pack(anchor=tk.W, pady=(12, 4))
 
         customtkinter.CTkRadioButton(
-            left, text="100% at bump",
-            variable=self._trigger_mode_var, value=True,
+            left,
+            text=_t("100% at bump"),
+            variable=self._trigger_mode_var,
+            value=True,
             **radio_kwargs,
         ).pack(anchor=tk.W, padx=16, pady=1)
 
         customtkinter.CTkRadioButton(
-            left, text="100% at press",
-            variable=self._trigger_mode_var, value=False,
+            left,
+            text=_t("100% at press"),
+            variable=self._trigger_mode_var,
+            value=False,
             **radio_kwargs,
         ).pack(anchor=tk.W, padx=16, pady=1)
 
         # ── Auto-connect ──
         customtkinter.CTkCheckBox(
-            left, text="Auto-connect USB at startup",
+            left,
+            text=_t("Auto-connect USB at startup"),
             variable=self._auto_connect_var,
             fg_color=T.RADIO_FG,
             hover_color=T.RADIO_HOVER,
@@ -151,7 +168,8 @@ class SettingsDialog:
         # ── Auto-scan BLE ──
         if self._auto_scan_ble_var is not None:
             customtkinter.CTkCheckBox(
-                left, text="Auto-scan BLE at startup",
+                left,
+                text=_t("Auto-scan BLE at startup"),
                 variable=self._auto_scan_ble_var,
                 fg_color=T.RADIO_FG,
                 hover_color=T.RADIO_HOVER,
@@ -163,7 +181,8 @@ class SettingsDialog:
 
         # ── Minimize to tray ──
         customtkinter.CTkCheckBox(
-            left, text="Minimize to system tray",
+            left,
+            text=_t("Minimize to system tray"),
             variable=self._minimize_to_tray_var,
             fg_color=T.RADIO_FG,
             hover_color=T.RADIO_HOVER,
@@ -173,14 +192,45 @@ class SettingsDialog:
             font=(T.FONT_FAMILY, 14),
         ).pack(anchor=tk.W, pady=(4, 4))
 
+        # ── Language selector ──
+        customtkinter.CTkLabel(
+            left,
+            text=_t("Language"),
+            text_color=T.TEXT_PRIMARY,
+            font=(T.FONT_FAMILY, 16, "bold"),
+        ).pack(anchor=tk.W, pady=(12, 4))
+
+        lang_names = list(SUPPORTED_LANGUAGES.values())
+        lang_codes = list(SUPPORTED_LANGUAGES.keys())
+        current_lang = get_language()
+        current_lang_name = SUPPORTED_LANGUAGES.get(current_lang, "English")
+        self._lang_var = tk.StringVar(value=current_lang_name)
+        customtkinter.CTkOptionMenu(
+            left,
+            variable=self._lang_var,
+            values=lang_names,
+            fg_color="#463F6F",
+            button_color="#5A5190",
+            button_hover_color=T.RADIO_HOVER,
+            dropdown_fg_color=T.GC_PURPLE_DARK,
+            dropdown_hover_color="#5A5190",
+            text_color=T.TEXT_PRIMARY,
+            font=(T.FONT_FAMILY, 14),
+            width=220,
+            command=self._on_language_changed,
+        ).pack(anchor=tk.W, padx=16, pady=1)
+
         # ── Save button ──
         customtkinter.CTkButton(
-            left, text="Save",
+            left,
+            text=_t("Save"),
             command=self._on_save_click,
             fg_color="#463F6F",
             hover_color="#5A5190",
             text_color=T.TEXT_PRIMARY,
-            corner_radius=12, height=36, width=220,
+            corner_radius=12,
+            height=36,
+            width=220,
             font=(T.FONT_FAMILY, 14),
         ).pack(anchor=tk.W, pady=(12, 0))
 
@@ -192,7 +242,8 @@ class SettingsDialog:
             fg_color=T.BTN_FG,
             hover_color=T.BTN_HOVER,
             text_color=T.BTN_TEXT,
-            corner_radius=12, height=36,
+            corner_radius=12,
+            height=36,
             width=220,
             font=(T.FONT_FAMILY, 14),
         )
@@ -201,7 +252,8 @@ class SettingsDialog:
         any_connected = self._is_any_connected()
         emu_text = "Stop Emulation" if self._is_any_emulating() else "Start Emulation"
         self._emulate_btn = customtkinter.CTkButton(
-            right, text=emu_text,
+            right,
+            text=emu_text,
             command=self._on_emulate_click,
             state="normal" if any_connected else "disabled",
             **btn_kwargs,
@@ -210,7 +262,8 @@ class SettingsDialog:
 
         # ── Test Rumble ──
         self._rumble_btn = customtkinter.CTkButton(
-            right, text="Test Rumble",
+            right,
+            text=_t("Test Rumble"),
             command=self._on_test_rumble_all,
             state="normal" if any_connected else "disabled",
             **btn_kwargs,
@@ -223,12 +276,15 @@ class SettingsDialog:
             sep_ble.pack(fill=tk.X, pady=(12, 8))
 
             customtkinter.CTkLabel(
-                right, text="Paired Controllers",
-                text_color=T.TEXT_PRIMARY, font=(T.FONT_FAMILY, 16, "bold"),
+                right,
+                text=_t("Paired Controllers"),
+                text_color=T.TEXT_PRIMARY,
+                font=(T.FONT_FAMILY, 16, "bold"),
             ).pack(anchor=tk.W, pady=(0, 4))
 
             self._device_list_frame = customtkinter.CTkFrame(
-                right, fg_color="transparent")
+                right, fg_color="transparent"
+            )
             self._device_list_frame.pack(anchor=tk.W, fill=tk.X)
             self._build_device_list()
 
@@ -237,34 +293,52 @@ class SettingsDialog:
         sep2.pack(fill=tk.X, pady=(12, 8))
 
         customtkinter.CTkLabel(
-            right, text="About",
-            text_color=T.TEXT_PRIMARY, font=(T.FONT_FAMILY, 16, "bold"),
+            right,
+            text=_t("About"),
+            text_color=T.TEXT_PRIMARY,
+            font=(T.FONT_FAMILY, 16, "bold"),
         ).pack(anchor=tk.W, pady=(0, 4))
 
         src_link = customtkinter.CTkLabel(
-            right, text="Source Code on GitHub",
-            text_color=T.TEXT_SECONDARY, font=(T.FONT_FAMILY, 13, "underline"),
+            right,
+            text=_t("Source Code on GitHub"),
+            text_color=T.TEXT_SECONDARY,
+            font=(T.FONT_FAMILY, 13, "underline"),
             cursor="hand2",
         )
         src_link.pack(anchor=tk.W, padx=4)
-        src_link.bind("<Button-1>", lambda e: webbrowser.open(
-            "https://github.com/RyanCopley/NSO-GameCube-Controller-Pairing-App"))
+        src_link.bind(
+            "<Button-1>",
+            lambda e: webbrowser.open(
+                "https://github.com/RyanCopley/NSO-GameCube-Controller-Pairing-App"
+            ),
+        )
 
         customtkinter.CTkLabel(
-            right, text="Credits & Special Thanks",
-            text_color=T.TEXT_PRIMARY, font=(T.FONT_FAMILY, 14, "bold"),
+            right,
+            text=_t("Credits & Special Thanks"),
+            text_color=T.TEXT_PRIMARY,
+            font=(T.FONT_FAMILY, 14, "bold"),
         ).pack(anchor=tk.W, pady=(8, 2))
 
         credits = [
-            ("GVNPWRS/NSO-GC-Controller-PC", "https://github.com/GVNPWRS/NSO-GC-Controller-PC"),
-            ("Nohzockt/Switch2-Controllers", "https://github.com/Nohzockt/Switch2-Controllers"),
+            (
+                "GVNPWRS/NSO-GC-Controller-PC",
+                "https://github.com/GVNPWRS/NSO-GC-Controller-PC",
+            ),
+            (
+                "Nohzockt/Switch2-Controllers",
+                "https://github.com/Nohzockt/Switch2-Controllers",
+            ),
             ("isaacs-12/nso-gc-bridge", "https://github.com/isaacs-12/nso-gc-bridge"),
             ("darthcloud/BlueRetro", "https://github.com/darthcloud/BlueRetro"),
         ]
         for label_text, url in credits:
             lbl = customtkinter.CTkLabel(
-                right, text=label_text,
-                text_color=T.TEXT_SECONDARY, font=(T.FONT_FAMILY, 12, "underline"),
+                right,
+                text=label_text,
+                text_color=T.TEXT_SECONDARY,
+                font=(T.FONT_FAMILY, 12, "underline"),
                 cursor="hand2",
             )
             lbl.pack(anchor=tk.W, padx=12)
@@ -295,8 +369,10 @@ class SettingsDialog:
         devices = self._get_known_ble_devices()
         if not devices:
             customtkinter.CTkLabel(
-                self._device_list_frame, text="No paired controllers",
-                text_color=T.TEXT_SECONDARY, font=(T.FONT_FAMILY, 13),
+                self._device_list_frame,
+                text=_t("No paired controllers"),
+                text_color=T.TEXT_SECONDARY,
+                font=(T.FONT_FAMILY, 13),
             ).pack(anchor=tk.W, padx=4, pady=2)
             return
 
@@ -304,34 +380,43 @@ class SettingsDialog:
             fg_color="#463F6F",
             hover_color="#5A5190",
             text_color=T.TEXT_PRIMARY,
-            corner_radius=8, height=28, width=70,
+            corner_radius=8,
+            height=28,
+            width=70,
             font=(T.FONT_FAMILY, 12),
         )
 
         for mac in devices:
             row = customtkinter.CTkFrame(
-                self._device_list_frame, fg_color="transparent")
+                self._device_list_frame, fg_color="transparent"
+            )
             row.pack(anchor=tk.W, fill=tk.X, pady=1)
 
             customtkinter.CTkLabel(
-                row, text=mac,
-                text_color=T.TEXT_SECONDARY, font=(T.FONT_FAMILY, 13),
+                row,
+                text=mac,
+                text_color=T.TEXT_SECONDARY,
+                font=(T.FONT_FAMILY, 13),
             ).pack(side=tk.LEFT, padx=(4, 8))
 
             customtkinter.CTkButton(
-                row, text="Forget",
+                row,
+                text=_t("Forget"),
                 command=lambda m=mac: self._forget_device(m),
                 **muted_btn,
             ).pack(side=tk.LEFT)
 
         if len(devices) >= 2:
             customtkinter.CTkButton(
-                self._device_list_frame, text="Forget All",
+                self._device_list_frame,
+                text=_t("Forget All"),
                 command=self._forget_all_devices,
                 fg_color="#463F6F",
                 hover_color="#5A5190",
                 text_color=T.TEXT_PRIMARY,
-                corner_radius=8, height=28, width=220,
+                corner_radius=8,
+                height=28,
+                width=220,
                 font=(T.FONT_FAMILY, 12),
             ).pack(anchor=tk.W, pady=(6, 0))
 
@@ -353,16 +438,32 @@ class SettingsDialog:
             self._on_save()
         self._dlg.destroy()
 
+    def _on_language_changed(self, choice: str):
+        """Handle language dropdown change."""
+        # Reverse-lookup the language code from the display name
+        code = "en"
+        for c, name in SUPPORTED_LANGUAGES.items():
+            if name == choice:
+                code = c
+                break
+        set_language(code)
+
     def _on_emulate_click(self):
         self._on_emulate_all()
         # Update button text after toggle
-        emu_text = "Stop Emulation" if self._is_any_emulating() else "Start Emulation"
+        emu_text = (
+            _t("Stop Emulation") if self._is_any_emulating() else _t("Start Emulation")
+        )
         self._emulate_btn.configure(text=emu_text)
 
     def update_emulate_button(self):
         """Update the emulate button text based on current state."""
         try:
-            emu_text = "Stop Emulation" if self._is_any_emulating() else "Start Emulation"
+            emu_text = (
+                _t("Stop Emulation")
+                if self._is_any_emulating()
+                else _t("Start Emulation")
+            )
             self._emulate_btn.configure(text=emu_text)
         except Exception:
             pass

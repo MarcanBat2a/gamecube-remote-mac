@@ -1,8 +1,10 @@
 ![Screenshot](images/screenshot.png)
 
-# NSO GameCube Controller Pairing App
+# NSO GameCube Controller Pairing App (macOS Fork)
 
-A cross-platform Python/Tkinter tool that connects the [Nintendo Switch Online GameCube Controller](https://www.nintendo.com/us/store/products/nintendo-switch-2-nintendo-gamecube-controller-120833/) via USB or Bluetooth and makes it usable on Steam and other platforms through Xbox 360 controller emulation. Supports up to 4 simultaneous controllers.
+> **Optimized for macOS** — This repository is a fork of [RyanCopley/NSO-GameCube-Controller-Pairing-App](https://github.com/RyanCopley/NSO-GameCube-Controller-Pairing-App), adapted and optimized for macOS (including macOS Tahoe / macOS 26). Fixes include system tray compatibility, BLE device filtering, and a French-translated interface.
+
+A Python/Tkinter tool that connects the [Nintendo Switch Online GameCube Controller](https://www.nintendo.com/us/store/products/nintendo-switch-2-nintendo-gamecube-controller-120833/) via USB or Bluetooth and makes it usable on Steam and other platforms through Dolphin pipe emulation or DSU server. Supports up to 4 simultaneous controllers.
 
 > **Note:** This app is designed specifically for the **NSO GameCube Controller** (Vendor ID `0x057e`, Product ID `0x2073`). A [Nintendo Switch Online](https://www.nintendo.com/us/switch/online/) membership ($3.99/month) is required to purchase the controller from the Nintendo Store, but only needs to be active for one month.
 
@@ -214,6 +216,7 @@ platform/
 
 ## Credits & Special Thanks
 
+- [RyanCopley/NSO-GameCube-Controller-Pairing-App](https://github.com/RyanCopley/NSO-GameCube-Controller-Pairing-App) — upstream project from which this fork originates
 - [GVNPWRS/NSO-GC-Controller-PC](https://github.com/GVNPWRS/NSO-GC-Controller-PC) — original project this was based on
 - [Nohzockt/Switch2-Controllers](https://github.com/Nohzockt/Switch2-Controllers) — Switch controller protocol reference
 - [isaacs-12/nso-gc-bridge](https://github.com/isaacs-12/nso-gc-bridge) — macOS Bluetooth support reference

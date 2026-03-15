@@ -12,6 +12,7 @@ from typing import Callable, Optional
 import customtkinter
 
 from . import ui_theme as T
+from .i18n import _ as _t
 
 
 class BLEScanWizard:
@@ -27,31 +28,27 @@ class BLEScanWizard:
                  that receives list[dict] with address/name/rssi keys.
     """
 
-    def __init__(self, parent,
-                 on_scan: Callable[[Callable[[list[dict]], None]], None]):
+    def __init__(self, parent, on_scan: Callable[[Callable[[list[dict]], None]], None]):
         self._result: Optional[str] = None
         self._on_scan = on_scan
         self._baseline: dict[str, dict] = {}  # address -> device dict
         self._pairing_results: list[dict] = []
 
         self._dlg = customtkinter.CTkToplevel(parent)
-        self._dlg.title("Wireless Controller Setup")
+        self._dlg.title(_t("Wireless Controller Setup"))
         self._dlg.resizable(False, False)
         self._dlg.transient(parent)
         self._dlg.configure(fg_color=T.GC_PURPLE_DARK)
 
-        self._outer = customtkinter.CTkFrame(
-            self._dlg, fg_color=T.GC_PURPLE_DARK)
+        self._outer = customtkinter.CTkFrame(self._dlg, fg_color=T.GC_PURPLE_DARK)
         self._outer.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
         # Content area — swapped per step
-        self._content = customtkinter.CTkFrame(
-            self._outer, fg_color="transparent")
+        self._content = customtkinter.CTkFrame(self._outer, fg_color="transparent")
         self._content.pack(fill=tk.BOTH, expand=True)
 
         # Button bar
-        self._btn_bar = customtkinter.CTkFrame(
-            self._outer, fg_color="transparent")
+        self._btn_bar = customtkinter.CTkFrame(self._outer, fg_color="transparent")
         self._btn_bar.pack(fill=tk.X, pady=(16, 0))
 
         self._show_step1()
@@ -85,14 +82,15 @@ class BLEScanWizard:
         self._clear_content()
 
         customtkinter.CTkLabel(
-            self._content, text="Step 1 of 2: Environment Scan",
+            self._content,
+            text=_t("Step 1 of 2: Environment Scan"),
             text_color=T.TEXT_PRIMARY,
             font=(T.FONT_FAMILY, 16, "bold"),
         ).pack(anchor=tk.W, pady=(0, 8))
 
         customtkinter.CTkLabel(
             self._content,
-            text=(
+            text=_t(
                 "Make sure your controller is OFF or not in pairing mode.\n"
                 "This scan captures nearby Bluetooth devices."
             ),
@@ -112,7 +110,8 @@ class BLEScanWizard:
         self._progress.pack_forget()  # hidden until scan starts
 
         self._status_label = customtkinter.CTkLabel(
-            self._content, text="",
+            self._content,
+            text="",
             text_color=T.TEXT_SECONDARY,
             font=(T.FONT_FAMILY, 12),
         )
@@ -120,23 +119,29 @@ class BLEScanWizard:
 
         # Buttons
         self._scan_btn = customtkinter.CTkButton(
-            self._btn_bar, text="Scan",
+            self._btn_bar,
+            text=_t("Scan"),
             command=self._do_baseline_scan,
             fg_color=T.BTN_FG,
             hover_color=T.BTN_HOVER,
             text_color=T.BTN_TEXT,
-            corner_radius=12, height=36, width=120,
+            corner_radius=12,
+            height=36,
+            width=120,
             font=(T.FONT_FAMILY, 14),
         )
         self._scan_btn.pack(side=tk.RIGHT, padx=(8, 0))
 
         customtkinter.CTkButton(
-            self._btn_bar, text="Cancel",
+            self._btn_bar,
+            text=_t("Cancel"),
             command=self._on_cancel,
             fg_color=T.GC_PURPLE_SURFACE,
             hover_color=T.GC_PURPLE_LIGHT,
             text_color=T.TEXT_PRIMARY,
-            corner_radius=12, height=36, width=100,
+            corner_radius=12,
+            height=36,
+            width=100,
             font=(T.FONT_FAMILY, 14),
         ).pack(side=tk.RIGHT)
 
@@ -145,7 +150,7 @@ class BLEScanWizard:
         self._progress.pack(pady=(0, 8))
         self._progress.configure(mode="indeterminate")
         self._progress.start()
-        self._status_label.configure(text="Scanning environment...")
+        self._status_label.configure(text=_t("Scanning environment..."))
 
         self._on_scan(self._on_baseline_complete)
 
@@ -153,9 +158,10 @@ class BLEScanWizard:
         """Called when the baseline scan finishes."""
         self._progress.stop()
         self._progress.pack_forget()
-        self._baseline = {d['address']: d for d in devices}
+        self._baseline = {d["address"]: d for d in devices}
         self._status_label.configure(
-            text=f"Found {len(devices)} nearby device(s).")
+            text=_t("Found {} nearby device(s).").format(len(devices))
+        )
         # Auto-advance to step 2 after a brief pause
         self._dlg.after(500, self._show_step2)
 
@@ -165,14 +171,15 @@ class BLEScanWizard:
         self._clear_content()
 
         customtkinter.CTkLabel(
-            self._content, text="Step 2 of 2: Controller Scan",
+            self._content,
+            text=_t("Step 2 of 2: Controller Scan"),
             text_color=T.TEXT_PRIMARY,
             font=(T.FONT_FAMILY, 16, "bold"),
         ).pack(anchor=tk.W, pady=(0, 8))
 
         customtkinter.CTkLabel(
             self._content,
-            text=(
+            text=_t(
                 "Now press and hold the pairing button on your controller.\n"
                 "Wait for the LED to flash, then click Scan."
             ),
@@ -191,7 +198,8 @@ class BLEScanWizard:
         self._progress.pack_forget()
 
         self._status_label = customtkinter.CTkLabel(
-            self._content, text="",
+            self._content,
+            text="",
             text_color=T.TEXT_SECONDARY,
             font=(T.FONT_FAMILY, 12),
         )
@@ -199,33 +207,42 @@ class BLEScanWizard:
 
         # Buttons
         self._scan_btn = customtkinter.CTkButton(
-            self._btn_bar, text="Scan",
+            self._btn_bar,
+            text=_t("Scan"),
             command=self._do_pairing_scan,
             fg_color=T.BTN_FG,
             hover_color=T.BTN_HOVER,
             text_color=T.BTN_TEXT,
-            corner_radius=12, height=36, width=120,
+            corner_radius=12,
+            height=36,
+            width=120,
             font=(T.FONT_FAMILY, 14),
         )
         self._scan_btn.pack(side=tk.RIGHT, padx=(8, 0))
 
         customtkinter.CTkButton(
-            self._btn_bar, text="Cancel",
+            self._btn_bar,
+            text=_t("Cancel"),
             command=self._on_cancel,
             fg_color=T.GC_PURPLE_SURFACE,
             hover_color=T.GC_PURPLE_LIGHT,
             text_color=T.TEXT_PRIMARY,
-            corner_radius=12, height=36, width=100,
+            corner_radius=12,
+            height=36,
+            width=100,
             font=(T.FONT_FAMILY, 14),
         ).pack(side=tk.RIGHT)
 
         customtkinter.CTkButton(
-            self._btn_bar, text="Back",
+            self._btn_bar,
+            text=_t("Back"),
             command=self._show_step1,
             fg_color=T.GC_PURPLE_SURFACE,
             hover_color=T.GC_PURPLE_LIGHT,
             text_color=T.TEXT_PRIMARY,
-            corner_radius=12, height=36, width=100,
+            corner_radius=12,
+            height=36,
+            width=100,
             font=(T.FONT_FAMILY, 14),
         ).pack(side=tk.RIGHT, padx=(0, 8))
 
@@ -234,7 +251,7 @@ class BLEScanWizard:
         self._progress.pack(pady=(0, 8))
         self._progress.configure(mode="indeterminate")
         self._progress.start()
-        self._status_label.configure(text="Scanning for new devices...")
+        self._status_label.configure(text=_t("Scanning for new devices..."))
 
         self._on_scan(self._on_pairing_complete)
 
@@ -244,13 +261,12 @@ class BLEScanWizard:
         self._progress.pack_forget()
 
         # Compute diff: new devices not in baseline
-        new_devices = [d for d in devices
-                       if d['address'] not in self._baseline]
+        new_devices = [d for d in devices if d["address"] not in self._baseline]
         self._pairing_results = new_devices
 
         if len(new_devices) == 1:
             # Auto-connect the single new device
-            self._result = new_devices[0]['address']
+            self._result = new_devices[0]["address"]
             self._dlg.destroy()
         elif len(new_devices) == 0:
             self._show_no_results()
@@ -263,14 +279,15 @@ class BLEScanWizard:
         self._clear_content()
 
         customtkinter.CTkLabel(
-            self._content, text="No New Devices Detected",
+            self._content,
+            text=_t("No New Devices Detected"),
             text_color=T.TEXT_PRIMARY,
             font=(T.FONT_FAMILY, 16, "bold"),
         ).pack(anchor=tk.W, pady=(0, 8))
 
         customtkinter.CTkLabel(
             self._content,
-            text=(
+            text=_t(
                 "No new Bluetooth devices appeared between scans.\n"
                 "Make sure your controller is in pairing mode\n"
                 "(LED should be flashing) and try again."
@@ -281,104 +298,126 @@ class BLEScanWizard:
         ).pack(anchor=tk.W, pady=(0, 12))
 
         customtkinter.CTkButton(
-            self._btn_bar, text="Retry",
+            self._btn_bar,
+            text=_t("Retry"),
             command=self._show_step1,
             fg_color=T.BTN_FG,
             hover_color=T.BTN_HOVER,
             text_color=T.BTN_TEXT,
-            corner_radius=12, height=36, width=120,
+            corner_radius=12,
+            height=36,
+            width=120,
             font=(T.FONT_FAMILY, 14),
         ).pack(side=tk.RIGHT, padx=(8, 0))
 
         customtkinter.CTkButton(
-            self._btn_bar, text="Cancel",
+            self._btn_bar,
+            text=_t("Cancel"),
             command=self._on_cancel,
             fg_color=T.GC_PURPLE_SURFACE,
             hover_color=T.GC_PURPLE_LIGHT,
             text_color=T.TEXT_PRIMARY,
-            corner_radius=12, height=36, width=100,
+            corner_radius=12,
+            height=36,
+            width=100,
             font=(T.FONT_FAMILY, 14),
         ).pack(side=tk.RIGHT)
 
-    # ── Results: multiple devices (picker) ─────────────────────────
+    # ── Results: multiple devices (picker) ─────────────────────
 
     def _show_picker(self, devices: list[dict]):
         self._clear_content()
 
         customtkinter.CTkLabel(
-            self._content, text="Multiple New Devices Found",
+            self._content,
+            text=_t("Multiple New Devices Found"),
             text_color=T.TEXT_PRIMARY,
             font=(T.FONT_FAMILY, 16, "bold"),
         ).pack(anchor=tk.W, pady=(0, 8))
 
         customtkinter.CTkLabel(
             self._content,
-            text="Select your controller from the new devices:",
+            text=_t("Select your controller from the new devices:"),
             text_color=T.TEXT_SECONDARY,
             font=(T.FONT_FAMILY, 13),
         ).pack(anchor=tk.W, pady=(0, 8))
 
         # Treeview (same styling as BLEDevicePickerDialog)
         style = ttk.Style()
-        style.theme_use('default')
-        style.configure('WizBLE.Treeview',
-                        background=T.SURFACE_DARK,
-                        foreground=T.TEXT_PRIMARY,
-                        fieldbackground=T.SURFACE_DARK,
-                        borderwidth=0,
-                        font=("", 11))
-        style.configure('WizBLE.Treeview.Heading',
-                        background=T.GC_PURPLE_MID,
-                        foreground=T.TEXT_PRIMARY,
-                        borderwidth=0,
-                        font=("", 11, "bold"))
-        style.map('WizBLE.Treeview',
-                  background=[('selected', T.GC_PURPLE_LIGHT)],
-                  foreground=[('selected', T.TEXT_PRIMARY)])
+        style.theme_use("default")
+        style.configure(
+            "WizBLE.Treeview",
+            background=T.SURFACE_DARK,
+            foreground=T.TEXT_PRIMARY,
+            fieldbackground=T.SURFACE_DARK,
+            borderwidth=0,
+            font=("", 11),
+        )
+        style.configure(
+            "WizBLE.Treeview.Heading",
+            background=T.GC_PURPLE_MID,
+            foreground=T.TEXT_PRIMARY,
+            borderwidth=0,
+            font=("", 11, "bold"),
+        )
+        style.map(
+            "WizBLE.Treeview",
+            background=[("selected", T.GC_PURPLE_LIGHT)],
+            foreground=[("selected", T.TEXT_PRIMARY)],
+        )
 
         cols = ("name", "address", "signal")
         self._tree = ttk.Treeview(
-            self._content, columns=cols, show="headings",
+            self._content,
+            columns=cols,
+            show="headings",
             height=min(len(devices), 8),
-            style='WizBLE.Treeview')
-        self._tree.heading("name", text="Name")
-        self._tree.heading("address", text="Address")
-        self._tree.heading("signal", text="Signal")
+            style="WizBLE.Treeview",
+        )
+        self._tree.heading("name", text=_t("Name"))
+        self._tree.heading("address", text=_t("Address"))
+        self._tree.heading("signal", text=_t("Signal"))
         self._tree.column("name", width=180)
         self._tree.column("address", width=160)
         self._tree.column("signal", width=60, anchor=tk.CENTER)
 
-        sorted_devices = sorted(devices, key=lambda d: d.get('rssi', -999),
-                                reverse=True)
+        sorted_devices = sorted(
+            devices, key=lambda d: d.get("rssi", -999), reverse=True
+        )
         for dev in sorted_devices:
-            rssi = dev.get('rssi', -999)
+            rssi = dev.get("rssi", -999)
             signal = f"{rssi} dBm" if rssi > -999 else "?"
-            name = dev.get('name', '') or '(unknown)'
-            self._tree.insert("", tk.END, values=(
-                name, dev['address'], signal))
+            name = dev.get("name", "") or _t("(unknown)")
+            self._tree.insert("", tk.END, values=(name, dev["address"], signal))
 
         self._tree.pack(fill=tk.BOTH, expand=True)
         self._tree.bind("<Double-1>", lambda _: self._on_picker_connect())
 
         # Buttons
         self._connect_btn = customtkinter.CTkButton(
-            self._btn_bar, text="Connect",
+            self._btn_bar,
+            text=_t("Connect"),
             command=self._on_picker_connect,
             fg_color=T.BTN_FG,
             hover_color=T.BTN_HOVER,
             text_color=T.BTN_TEXT,
-            corner_radius=12, height=36, width=120,
+            corner_radius=12,
+            height=36,
+            width=120,
             font=(T.FONT_FAMILY, 14),
         )
         self._connect_btn.pack(side=tk.RIGHT, padx=(8, 0))
 
         customtkinter.CTkButton(
-            self._btn_bar, text="Cancel",
+            self._btn_bar,
+            text=_t("Cancel"),
             command=self._on_cancel,
             fg_color=T.GC_PURPLE_SURFACE,
             hover_color=T.GC_PURPLE_LIGHT,
             text_color=T.TEXT_PRIMARY,
-            corner_radius=12, height=36, width=100,
+            corner_radius=12,
+            height=36,
+            width=100,
             font=(T.FONT_FAMILY, 14),
         ).pack(side=tk.RIGHT)
 

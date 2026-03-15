@@ -84,29 +84,21 @@ def _register_font():
     if not os.path.isfile(_FONT_FILE):
         return
     try:
-        if sys.platform == "linux":
-            fontconfig = ctypes.cdll.LoadLibrary("libfontconfig.so.1")
-            fontconfig.FcConfigAppFontAddFile.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
-            fontconfig.FcConfigAppFontAddFile.restype = ctypes.c_int
-            fontconfig.FcConfigAppFontAddFile(None, _FONT_FILE.encode("utf-8"))
-        elif sys.platform == "win32":
-            ctypes.windll.gdi32.AddFontResourceExW(_FONT_FILE, 0x10, 0)
-        elif sys.platform == "darwin":
-            from ctypes import util as _cu
-            ct = ctypes.cdll.LoadLibrary(_cu.find_library("CoreText"))
-            cf = ctypes.cdll.LoadLibrary(_cu.find_library("CoreFoundation"))
-            cf.CFStringCreateWithCString.restype = ctypes.c_void_p
-            cf.CFStringCreateWithCString.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_uint32]
-            cf.CFURLCreateWithFileSystemPath.restype = ctypes.c_void_p
-            cf.CFURLCreateWithFileSystemPath.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int32, ctypes.c_bool]
-            cf.CFRelease.argtypes = [ctypes.c_void_p]
-            ct.CTFontManagerRegisterFontsForURL.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_void_p]
-            ct.CTFontManagerRegisterFontsForURL.restype = ctypes.c_bool
-            s = cf.CFStringCreateWithCString(None, _FONT_FILE.encode("utf-8"), 0x08000100)
-            url = cf.CFURLCreateWithFileSystemPath(None, s, 0, False)
-            ct.CTFontManagerRegisterFontsForURL(url, 0, None)
-            cf.CFRelease(url)
-            cf.CFRelease(s)
+        from ctypes import util as _cu
+        ct = ctypes.cdll.LoadLibrary(_cu.find_library("CoreText"))
+        cf = ctypes.cdll.LoadLibrary(_cu.find_library("CoreFoundation"))
+        cf.CFStringCreateWithCString.restype = ctypes.c_void_p
+        cf.CFStringCreateWithCString.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_uint32]
+        cf.CFURLCreateWithFileSystemPath.restype = ctypes.c_void_p
+        cf.CFURLCreateWithFileSystemPath.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int32, ctypes.c_bool]
+        cf.CFRelease.argtypes = [ctypes.c_void_p]
+        ct.CTFontManagerRegisterFontsForURL.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_void_p]
+        ct.CTFontManagerRegisterFontsForURL.restype = ctypes.c_bool
+        s = cf.CFStringCreateWithCString(None, _FONT_FILE.encode("utf-8"), 0x08000100)
+        url = cf.CFURLCreateWithFileSystemPath(None, s, 0, False)
+        ct.CTFontManagerRegisterFontsForURL(url, 0, None)
+        cf.CFRelease(url)
+        cf.CFRelease(s)
     except Exception:
         pass
 

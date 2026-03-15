@@ -22,7 +22,9 @@ from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
 from .sw2_protocol import (
-    LED_MAP, build_led_cmd, translate_ble_native_to_usb,
+    LED_MAP,
+    build_led_cmd,
+    translate_ble_native_to_usb,
 )
 
 # Nintendo BLE manufacturer company ID (from protocol doc)
@@ -30,24 +32,61 @@ _NINTENDO_COMPANY_ID = 0x037E
 
 # Known Nintendo controller name substrings
 _NINTENDO_NAME_PATTERNS = (
-    'Pro Controller', 'Nintendo', 'Joy-Con', 'HORI', 'NSO', 'DeviceName',
+    "Pro Controller",
+    "Nintendo",
+    "Joy-Con",
+    "HORI",
+    "NSO",
+    "DeviceName",
 )
 
 # SPI read command used as handshake (same as nso-gc-bridge BLE_HANDSHAKE_READ_SPI)
-_HANDSHAKE_CMD = bytearray([
-    0x02, 0x91, 0x01, 0x04,
-    0x00, 0x08, 0x00, 0x00, 0x40, 0x7e, 0x00, 0x00, 0x00, 0x30, 0x01, 0x00
-])
+_HANDSHAKE_CMD = bytearray(
+    [
+        0x02,
+        0x91,
+        0x01,
+        0x04,
+        0x00,
+        0x08,
+        0x00,
+        0x00,
+        0x40,
+        0x7E,
+        0x00,
+        0x00,
+        0x00,
+        0x30,
+        0x01,
+        0x00,
+    ]
+)
 
 # Init commands sent after handshake (from nso-gc-bridge)
-_DEFAULT_REPORT_DATA = bytearray([
-    0x03, 0x91, 0x00, 0x0d, 0x00, 0x08,
-    0x00, 0x00, 0x01, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
-])
+_DEFAULT_REPORT_DATA = bytearray(
+    [
+        0x03,
+        0x91,
+        0x00,
+        0x0D,
+        0x00,
+        0x08,
+        0x00,
+        0x00,
+        0x01,
+        0x00,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+    ]
+)
 
-_SET_INPUT_MODE = bytearray([
-    0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x30
-])
+_SET_INPUT_MODE = bytearray(
+    [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x30]
+)
 
 
 def _log(msg: str):
@@ -59,11 +98,11 @@ def _normalize_address(addr: str | None) -> str | None:
     """Strip /P or /R suffix from a BLE address (Linux Bumble format)."""
     if not addr:
         return addr
-    return re.sub(r'/[PR]$', '', addr)
+    return re.sub(r"/[PR]$", "", addr)
 
 
 # MAC address pattern: XX:XX:XX:XX:XX:XX
-_MAC_RE = re.compile(r'^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$')
+_MAC_RE = re.compile(r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
 
 
 def _is_mac_address(addr: str) -> bool:
@@ -80,9 +119,15 @@ class BleakBackend:
 
     def __init__(self):
         self._clients: dict[str, BleakClient] = {}  # identifier -> BleakClient
-        self._write_chars: dict[str, object] = {}   # identifier -> handshake char (command writes)
-        self._cmd_chars: dict[str, object] = {}     # identifier -> command channel char (for vibration)
-        self._last_scan: dict[str, BLEDevice] = {}  # address -> BLEDevice from last scan_only()
+        self._write_chars: dict[
+            str, object
+        ] = {}  # identifier -> handshake char (command writes)
+        self._cmd_chars: dict[
+            str, object
+        ] = {}  # identifier -> command channel char (for vibration)
+        self._last_scan: dict[
+            str, BLEDevice
+        ] = {}  # address -> BLEDevice from last scan_only()
 
     @property
     def is_open(self) -> bool:
@@ -117,7 +162,11 @@ class BleakBackend:
         # On macOS, CoreBluetooth uses UUIDs, not MAC addresses.  A saved
         # MAC from Linux will never match — discard it so we don't waste
         # time waiting for a match that can never happen.
-        if target_address and sys.platform == 'darwin' and _is_mac_address(target_address):
+        if (
+            target_address
+            and sys.platform == "darwin"
+            and _is_mac_address(target_address)
+        ):
             _log(f"Discarding Linux MAC {target_address} (useless on macOS)")
             target_address = None
 
@@ -159,15 +208,24 @@ class BleakBackend:
         # found in the scan, try connecting directly by address — BleakClient
         # can connect to bonded devices without a prior scan result.
         target_in_scan = target_address and any(
-            a.upper() == target_address.upper() for a in found_devices)
+            a.upper() == target_address.upper() for a in found_devices
+        )
 
         if target_address and not target_in_scan:
-            _log(f"Target {target_address} not in scan results, "
-                 f"trying direct connect (bonded device?)")
+            _log(
+                f"Target {target_address} not in scan results, "
+                f"trying direct connect (bonded device?)"
+            )
             on_status(f"Connecting to {target_address}...")
             result = await self._connect_and_init(
-                target_address, None, slot_index, data_queue,
-                on_status, on_disconnect, connect_timeout)
+                target_address,
+                None,
+                slot_index,
+                data_queue,
+                on_status,
+                on_disconnect,
+                connect_timeout,
+            )
             if result:
                 return result
 
@@ -185,11 +243,12 @@ class BleakBackend:
             rssi = adv.rssi if adv and adv.rssi is not None else -999
             is_nintendo = False
             if adv:
-                md = getattr(adv, 'manufacturer_data', {})
+                md = getattr(adv, "manufacturer_data", {})
                 if _NINTENDO_COMPANY_ID in md:
                     is_nintendo = True
             name_match = name == "devicename" or any(
-                p.lower() in name for p in _NINTENDO_NAME_PATTERNS)
+                p.lower() in name for p in _NINTENDO_NAME_PATTERNS
+            )
             return (
                 0 if is_nintendo else 1,
                 0 if name_match else 1,
@@ -207,7 +266,35 @@ class BleakBackend:
                     ordered_addrs.insert(0, addr)
                     break
 
-        for addr in ordered_addrs:
+        # Filter: only attempt connections with devices that look like
+        # Nintendo controllers (manufacturer ID or name match).  This
+        # prevents the app from trying to handshake random nearby BLE
+        # devices (phones, headphones, etc.) which wastes time and can
+        # cause unwanted connection prompts on those devices.
+        def _is_nintendo_device(addr):
+            adv = found_adv.get(addr)
+            if adv:
+                md = getattr(adv, "manufacturer_data", {})
+                if _NINTENDO_COMPANY_ID in md:
+                    return True
+            d = found_devices[addr]
+            name = (d.name or "").lower()
+            if name == "devicename" or any(
+                p.lower() in name for p in _NINTENDO_NAME_PATTERNS
+            ):
+                return True
+            # Target address always passes the filter
+            if target_address and addr.upper() == target_address.upper():
+                return True
+            return False
+
+        candidates = [a for a in ordered_addrs if _is_nintendo_device(a)]
+        _log(
+            f"Filtered {len(ordered_addrs)} devices to "
+            f"{len(candidates)} Nintendo candidate(s)"
+        )
+
+        for addr in candidates:
             if addr in exclude:
                 continue
             if addr in self._clients:
@@ -219,8 +306,14 @@ class BleakBackend:
             on_status(f"Trying {name}...")
 
             result = await self._connect_and_init(
-                addr, d, slot_index, data_queue,
-                on_status, on_disconnect, connect_timeout)
+                addr,
+                d,
+                slot_index,
+                data_queue,
+                on_status,
+                on_disconnect,
+                connect_timeout,
+            )
             if result:
                 return result
 
@@ -252,11 +345,13 @@ class BleakBackend:
         for addr, device in found_devices.items():
             adv = found_adv.get(addr)
             rssi = adv.rssi if adv and adv.rssi is not None else -999
-            result.append({
-                'address': addr,
-                'name': device.name or '',
-                'rssi': rssi,
-            })
+            result.append(
+                {
+                    "address": addr,
+                    "name": device.name or "",
+                    "rssi": rssi,
+                }
+            )
 
         _log(f"scan_only: found {len(result)} device(s)")
         return result
@@ -280,8 +375,7 @@ class BleakBackend:
         if not ble_device:
             # On Windows, bonded devices may not appear in scan results.
             # Try connecting directly by address — BleakClient handles this.
-            _log(f"connect_device: {address} not in scan cache, "
-                 f"trying direct connect")
+            _log(f"connect_device: {address} not in scan cache, trying direct connect")
             on_status(f"Connecting to {address}...")
         else:
             name = ble_device.name or "(no name)"
@@ -289,8 +383,14 @@ class BleakBackend:
             on_status(f"Connecting to {name}...")
 
         return await self._connect_and_init(
-            address, ble_device, slot_index, data_queue,
-            on_status, on_disconnect, connect_timeout)
+            address,
+            ble_device,
+            slot_index,
+            data_queue,
+            on_status,
+            on_disconnect,
+            connect_timeout,
+        )
 
     async def _connect_and_init(
         self,
@@ -319,15 +419,16 @@ class BleakBackend:
         # Connect — use BLEDevice object if available, else address string
         try:
             target = ble_device if ble_device is not None else address
-            client = BleakClient(target, timeout=connect_timeout,
-                                 disconnected_callback=_on_disconnected)
+            client = BleakClient(
+                target, timeout=connect_timeout, disconnected_callback=_on_disconnected
+            )
             await client.connect()
         except Exception as e:
             _log(f"  Connect failed: {type(e).__name__}: {e}")
             return None
 
         if not client.is_connected:
-            _log(f"  Not connected after connect()")
+            _log("  Not connected after connect()")
             return None
 
         _log(f"  Connected to {address}")
@@ -341,14 +442,15 @@ class BleakBackend:
         # Request lower connection interval on Windows 11+ for reduced input latency.
         # Windows 10 defaults to 30-60ms intervals with no API to change them.
         # Windows 11 (build 22000+) exposes ThroughputOptimized (~7.5-15ms).
-        if sys.platform == 'win32':
+        if sys.platform == "win32":
             try:
-                build_number = int(platform.version().split('.')[-1])
+                build_number = int(platform.version().split(".")[-1])
                 if build_number >= 22000:
                     from bleak.backends.winrt.client import BleakClientWinRT
                     from winrt.windows.devices.bluetooth import (
                         BluetoothLEPreferredConnectionParameters,
                     )
+
                     backend = client._backend
                     if isinstance(backend, BleakClientWinRT):
                         backend._requester.request_preferred_connection_parameters(
@@ -372,7 +474,7 @@ class BleakBackend:
                     write_chars.append(char)
 
         if not write_chars:
-            _log(f"  No write characteristics — not a controller")
+            _log("  No write characteristics — not a controller")
             try:
                 await client.disconnect()
             except Exception:
@@ -398,7 +500,7 @@ class BleakBackend:
                     pass
 
         if handshake_char is None:
-            _log(f"  Handshake failed on all chars — not the controller")
+            _log("  Handshake failed on all chars — not the controller")
             try:
                 await client.disconnect()
             except Exception:
@@ -416,9 +518,13 @@ class BleakBackend:
         # Find the service with ≥3 WriteNoResp chars, take the 2nd by handle.
         for svc in client.services:
             wnr = sorted(
-                [c for c in svc.characteristics
-                 if "write-without-response" in (getattr(c, "properties", []) or [])],
-                key=lambda c: c.handle)
+                [
+                    c
+                    for c in svc.characteristics
+                    if "write-without-response" in (getattr(c, "properties", []) or [])
+                ],
+                key=lambda c: c.handle,
+            )
             if len(wnr) >= 3:
                 self._cmd_chars[address] = wnr[1]
                 _log(f"  Command channel: 0x{wnr[1].handle:04X} {wnr[1].uuid}")
@@ -444,7 +550,9 @@ class BleakBackend:
                 return
             if _report_count[0] < 3:
                 _report_count[0] += 1
-                _log(f"  Report #{_report_count[0]}: len={len(value)} first16={list(value[:16])}")
+                _log(
+                    f"  Report #{_report_count[0]}: len={len(value)} first16={list(value[:16])}"
+                )
             try:
                 data_queue.put_nowait(translate_ble_native_to_usb(bytes(value)))
             except queue.Full:
@@ -465,8 +573,10 @@ class BleakBackend:
         # didn't light up on macOS/Windows while working on Linux (Bumble
         # writes directly to handle 0x0014).
         cmd_char = self._cmd_chars.get(address, handshake_char)
-        for data in (_DEFAULT_REPORT_DATA, bytearray(build_led_cmd(
-                LED_MAP[min(slot_index, len(LED_MAP) - 1)]))):
+        for data in (
+            _DEFAULT_REPORT_DATA,
+            bytearray(build_led_cmd(LED_MAP[min(slot_index, len(LED_MAP) - 1)])),
+        ):
             try:
                 await client.write_gatt_char(cmd_char, data, response=False)
             except Exception:
@@ -506,11 +616,22 @@ class BleakBackend:
         # Extract on/off state from the rumble packet (byte 2)
         state = packet[2] if len(packet) > 2 else 0
         # SW2 vibration command: cmd 0x0A, interface 0x01 (BLE)
-        vibration_cmd = bytearray([
-            0x0A, 0x91, 0x01, 0x02, 0x00, 0x04,
-            0x00, 0x00, 0x01 if state else 0x00,
-            0x00, 0x00, 0x00,
-        ])
+        vibration_cmd = bytearray(
+            [
+                0x0A,
+                0x91,
+                0x01,
+                0x02,
+                0x00,
+                0x04,
+                0x00,
+                0x00,
+                0x01 if state else 0x00,
+                0x00,
+                0x00,
+                0x00,
+            ]
+        )
         try:
             await client.write_gatt_char(cmd_char, vibration_cmd, response=False)
             return True
